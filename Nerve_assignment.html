@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .toggle {
+            display: flex;
+            justify-content: space-between;
+            background-color: #f0f0f0;
+            padding: 5px;
+            border-radius: 20px;
+            width: fit-content;
+            margin-bottom: 20px;
+        }
+        .toggle button {
+            padding: 10px 20px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 20px;
+        }
+        .toggle button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Button-based Date Picker */
+        .date-picker {
+            position: relative;
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        .date-btn {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .date-btn span {
+            font-weight: bold;
+        }
+        .date-buttons {
+            margin-top: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .date-buttons button {
+            width: 100%;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            text-align: left;
+            cursor: pointer;
+        }
+        .date-buttons button:hover {
+            background-color: #f0f0f0;
+        }
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .card p {
+            color: #888;
+            font-size: 14px;
+            margin: 0;
+        }
+        .empty-state {
+            color: red;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div align="center">
+    <!-- Toggle for views -->
+    <div class="toggle">
+        <button class="toggle-btn active" data-view="Bullish">Bullish</button>
+        <button class="toggle-btn" data-view="Bearish">Bearish</button>
+        <button class="toggle-btn" data-view="RangeBound">Rangebound</button>
+        <button class="toggle-btn" data-view="Volatile">Volatile</button>
+    </div>
+
+    <!-- Button-based Date Picker -->
+    <div class="date-picker">
+        <div class="date-btn" id="toggleDatePicker">
+            <span id="selectedDate">24 Apr 2024</span>
+            <span>&#9662;</span> <!-- Down arrow -->
+        </div>
+        <div class="date-buttons" id="dateButtonsContainer">
+            <!-- Date buttons will be added dynamically -->
+        </div>
+    </div>
+
+    <!-- Strategy Cards Section -->
+    <div id="cards" class="cards"></div>
+    
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state"></div>
+    </div>
+
+    <script>
+        // Corrected strategyArray from Resources
+        const strategyArray = [
+            {
+                'View': 'Bullish',
+                'Value': {
+                    '24-Apr-2024': ['Bull Call Spread','Bull Put Spread','Long Call'],
+                    '02-May-2024': ['Bull Call Spread','Bull Call Spread','Bull Put Spread'],
+                    '09-May-2024': ['Strategy Put','Strategy Call']
+                }
+            },
+            {
+                'View': 'Bearish',
+                'Value': {
+                    '24-Apr-2024': ['Bear Call Spread','Long Put'],
+                    '31-May-2024': ['Long Put','Long Put'],
+                    '21-Jun-2024': ['Strategy3','Bear Put Spread']
+                }
+            },
+            {
+                'View': 'RangeBound',
+                'Value': {
+                    '24-Apr-2024': ['Short Straddle','Iron Condor'],
+                    '02-May-2024': ['Short Straddle','Iron Butterfly'],
+                    '21-Jun-2024': ['Iron Condor','Iron Butterfly']
+                }
+            },
+            {
+                'View': 'Volatile',
+                'Value': {
+                    '02-May-2024': ['Long Straddle','Long Strangle'],
+                    '09-May-2024': ['Long Straddle','Long Strangle'],
+                    '31-May-2024': ['Long Straddle','Long Strangle']
+                }
+            }
+        ];
+
+        // Provided dateArray
+        const dateArray = ['24-Apr-2024','02-May-2024','09-May-2024','31-May-2024','21-Jun-2024'];
+
+        let currentView = 'Bullish'; // Default view
+        let currentDate = dateArray[0]; // Default date
+
+        const toggleDatePicker = document.getElementById('toggleDatePicker');
+        const dateButtonsContainer = document.getElementById('dateButtonsContainer');
+        const selectedDateSpan = document.getElementById('selectedDate');
+        const cardsContainer = document.getElementById('cards');
+        const emptyState = document.getElementById('empty-state');
+
+        // Populate date buttons
+        function populateDateButtons() {
+            dateButtonsContainer.innerHTML = '';
+            dateArray.forEach(date => {
+                const dateButton = document.createElement('button');
+                dateButton.textContent = formatDate(date);
+                dateButton.addEventListener('click', () => {
+                    currentDate = date;
+                    selectedDateSpan.textContent = formatDate(currentDate);
+                    dateButtonsContainer.style.display = 'none'; // Hide buttons after selection
+                    renderCards(currentView, currentDate);
+                });
+                dateButtonsContainer.appendChild(dateButton);
+            });
+
+            // Set default selected date
+            currentDate = dateArray[0]; 
+            selectedDateSpan.textContent = formatDate(currentDate);
+            renderCards(currentView, currentDate);
+        }
+
+        // Toggle date buttons visibility
+        toggleDatePicker.addEventListener('click', () => {
+            dateButtonsContainer.style.display = dateButtonsContainer.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        // Format date function
+        function formatDate(dateStr) {
+            const [day, month, year] = dateStr.split('-');
+            const months = {
+                'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April',
+                'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August',
+                'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December'
+            };
+            return `${day} ${months[month]} ${year}`;
+        }
+
+        // Render strategy cards based on selected view and date
+        function renderCards(view, selectedDate) {
+            cardsContainer.innerHTML = '';
+            emptyState.innerHTML = '';
+
+            const viewData = strategyArray.find(v => v.View === view);
+            const strategiesForDate = viewData.Value[selectedDate] || [];
+
+            if (strategiesForDate.length === 0) {
+                emptyState.textContent = `No strategies found for ${formatDate(selectedDate)}`;
+                return;
+            }
+
+            // Count occurrences of each strategy
+            const strategyCount = strategiesForDate.reduce((acc, strategy) => {
+                acc[strategy] = (acc[strategy] || 0) + 1;
+                return acc;
+            }, {});
+
+            // Render cards
+            Object.keys(strategyCount).forEach(strategyName => {
+                let card = document.createElement('div');
+                card.classList.add('card');
+                
+                let strategyLabel = strategyCount[strategyName] > 1 ? 'Strategies' : 'Strategy';
+                
+                card.innerHTML = `
+                    <h3>${strategyName}</h3>
+                    <p>${strategyCount[strategyName]} ${strategyLabel}</p>
+                `;
+                
+                cardsContainer.appendChild(card);
+            });
+        }
+
+        // Event listeners for toggle buttons
+        document.querySelectorAll('.toggle button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.toggle button').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentView = this.getAttribute('data-view');
+                renderCards(currentView, currentDate);
+            });
+        });
+
+        // Initialize on page load
+        populateDateButtons();
+
+    </script>
+</body>
+</html>
