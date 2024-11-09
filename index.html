@@ -124,10 +124,11 @@
 
     <!-- Strategy Cards Section -->
     <div id="cards" class="cards"></div>
-    
     <!-- Empty State -->
     <div id="empty-state" class="empty-state"></div>
     </div>
+    <!--new container-->
+    <div id="newContainer" class="newContainer"></div>
 
     <script>
         // Corrected strategyArray from Resources
@@ -177,6 +178,8 @@
         const selectedDateSpan = document.getElementById('selectedDate');
         const cardsContainer = document.getElementById('cards');
         const emptyState = document.getElementById('empty-state');
+        const strategyCard= document.getElementById('strategyCard');
+        const newContainer=document.getElementById('newContainer');
 
         // Populate date buttons
         function populateDateButtons() {
@@ -222,18 +225,13 @@
 
             const viewData = strategyArray.find(v => v.View === view);
             const strategiesForDate = viewData.Value[selectedDate] || [];
-
-            if (strategiesForDate.length === 0) {
-                emptyState.textContent = `No strategies found for ${formatDate(selectedDate)}`;
-                return;
-            }
-
+            
             // Count occurrences of each strategy
             const strategyCount = strategiesForDate.reduce((acc, strategy) => {
                 acc[strategy] = (acc[strategy] || 0) + 1;
                 return acc;
             }, {});
-
+            console.log(Object.keys(strategyCount));
             // Render cards
             Object.keys(strategyCount).forEach(strategyName => {
                 let card = document.createElement('div');
@@ -248,6 +246,15 @@
                 
                 cardsContainer.appendChild(card);
             });
+
+            if (strategiesForDate.length === 0) {
+                emptyState.textContent = `No strategies found for ${formatDate(selectedDate)} in ${currentView}`;
+                return;
+            }
+            else{
+                emptyState.textContent = `There are ${(Object.keys(strategyCount)).length} views ${currentView}`;
+                return;
+            }
         }
 
         // Event listeners for toggle buttons
@@ -260,9 +267,22 @@
             });
         });
 
+        function Container(){
+            newContainer.innerHTML =`<div class="strategy-guide-container no-scrollbar flex">
+            <div class="strategy-guide strategy-guide-1">
+                <div class="strategy-guide-left">
+                    <h2>One click spread level execution</h2>
+                    <p>Optimize your risk adjusted returns as per your trade view</p>
+                </div>
+                <div class="strategy-guide-right">
+                    <img src="/img/guide-icon-1.svg" alt="guide-icon-1">
+		    <p>Check</p>
+                </div>`;
+        }
+
         // Initialize on page load
         populateDateButtons();
-
+        Container();
     </script>
 </body>
 </html>
